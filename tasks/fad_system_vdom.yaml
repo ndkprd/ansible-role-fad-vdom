@@ -1,0 +1,111 @@
+---
+
+- name: Print out the FAD VDOM existing values.
+  ansible.builtin.debug:
+    msg: >
+      {{ (lookup('url', fad_vdom_api_endpoint
+      % (vdom.name), validate_certs=false, split_lines=false, headers=fad_api_header) | from_json).get('payload') }}
+  loop: "{{ fad_vdoms }}"
+  loop_control:
+    loop_var: vdom
+    label: "{{ vdom.name }}"
+  tags: [debug]
+
+- name: Create new FAD VDOM entry if it's not found.
+  ansible.builtin.uri:
+    method: POST
+    url: "{{ fad_vdom_api_endpoint | format(vdom.name) }}"
+    body_format: "{{ fad_api_uri_params.body_format }}"
+    validate_certs: "{{ fad_api_uri_params.validate_certs }}"
+    return_content: "{{ fad_api_uri_params.return_content }}"
+    status_code: "{{ fad_api_uri_params.status_code }}"
+    headers: "{{ fad_api_header }}"
+    # I'm too lazy to grain other values other than the name and the status,
+    # since at this point in time I only need the vdom to be exists and enabled
+    body: |
+      {
+        "mkey": "{{ vdom.name }}",
+        "concurrentsession": "",
+        "ep": "",
+        "hc": "",
+        "inbound": "",
+        "l4cps": "",
+        "l7cps": "",
+        "l7rps": "",
+        "lu": "",
+        "outbound": "",
+        "rs": "",
+        "sp": "",
+        "sslcps": "",
+        "sslthroughput": "",
+        "status": "{{ vdom.status }}",
+        "ug": "",
+        "vs": ""
+      }
+  register: fad_vdom_post_results
+  loop: "{{ fad_vdoms }}"
+  loop_control:
+    loop_var: vdom
+    label: "{{ vdom.name }}"
+  when: >
+    (lookup('url', fad_vdom_api_endpoint
+    % (vdom.name), validate_certs=false, split_lines=false,
+    headers=fad_api_header) | from_json).get('payload').mkey is undefined
+  changed_when: "fad_vdom_post_results.json.payload == 0"
+  failed_when: fad_vdom_post_results.json.payload not in [0, -15]
+
+- name: Update FAD VDOM entry if it's exist and any of its value is changed.
+  ansible.builtin.uri:
+    method: PUT
+    url: "{{ fad_vdom_api_endpoint | format(vdom.name) }}"
+    body_format: "{{ fad_api_uri_params.body_format }}"
+    validate_certs: "{{ fad_api_uri_params.validate_certs }}"
+    return_content: "{{ fad_api_uri_params.return_content }}"
+    status_code: "{{ fad_api_uri_params.status_code }}"
+    headers: "{{ fad_api_header }}"
+    body: |
+      {
+        "mkey": "{{ vdom.name }}",
+        "concurrentsession": "",
+        "ep": "",
+        "hc": "",
+        "inbound": "",
+        "l4cps": "",
+        "l7cps": "",
+        "l7rps": "",
+        "lu": "",
+        "outbound": "",
+        "rs": "",
+        "sp": "",
+        "sslcps": "",
+        "sslthroughput": "",
+        "status": "{{ vdom.status }}",
+        "ug": "",
+        "vs": ""
+      }
+  register: fad_vdom_put_results
+  loop: "{{ fad_vdoms }}"
+  loop_control:
+    loop_var: vdom
+    label: "{{ vdom.name }}"
+  # for the zone_list, it will compare the current value in the zone_list with the currently existing zones
+  when:
+    - (lookup('url', fad_vdom_api_endpoint
+      % (vdom.name), validate_certs=false, split_lines=false,
+      headers=fad_api_header) | from_json).get('payload')['mkey'] is defined
+    - (lookup('url', fad_vdom_api_endpoint
+      % (vdom.name), validate_certs=false, split_lines=false,
+      headers=fad_api_header) | from_json).get('payload')['status'] != vdom.status | default('enabled')
+  changed_when: "fad_vdom_put_results.json.payload == 0"
+  failed_when: "fad_vdom_put_results.json.payload != 0 and fad_vdom_put_results.json.payload != -15"
+
+- name: Print out the FAD VDOM values after create/update task.
+  ansible.builtin.debug:
+    msg: >
+      {{ (lookup('url', fad_vdom_api_endpoint
+      % (vdom.name), validate_certs=false, split_lines=false, headers=fad_api_header) | from_json).get('payload') }}
+  loop: "{{ fad_vdoms }}"
+  loop_control:
+    loop_var: vdom
+    label: "{{ vdom.name }}"
+  tags: [debug]
