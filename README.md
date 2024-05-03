@@ -1,7 +1,7 @@
 ndkprd.fad_vdom
 ===============
 
-An Ansible role to manage Fortinet's FortiADC via HTTP REST API.
+An Ansible role to manage Fortinet's FortiADC VDOMs via HTTP REST API.
 
 Requirements
 ------------
