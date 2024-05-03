@@ -2,6 +2,7 @@
 
 - name: Create/update FAD VDOMs.
   vars:
-    fad_vdom_api_endpoint: "{{ fad_base_url + fad_api_endpoint.system_vdom }}"
+    fad_vdom_api_endpoint: "{{ fad_base_url + fad_api_endpoint.vdom }}"
+    fad_system_vdom_api_endpoint: "{{ fad_base_url + fad_api_endpoint.system_vdom }}"
   ansible.builtin.import_tasks: fad_system_vdom.yaml
   tags: [fad_system_vdom]

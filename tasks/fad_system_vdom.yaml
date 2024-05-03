@@ -3,7 +3,7 @@
 - name: Print out the FAD VDOM existing values.
   ansible.builtin.debug:
     msg: >
-      {{ (lookup('url', fad_vdom_api_endpoint
+      {{ (lookup('url', fad_system_vdom_api_endpoint
       % (vdom.name), validate_certs=false, split_lines=false, headers=fad_api_header) | from_json).get('payload') }}
   loop: "{{ fad_vdoms }}"
   loop_control:
@@ -24,23 +24,7 @@
     # since at this point in time I only need the vdom to be exists and enabled
     body: |
       {
-        "mkey": "{{ vdom.name }}",
-        "concurrentsession": "",
-        "ep": "",
-        "hc": "",
-        "inbound": "",
-        "l4cps": "",
-        "l7cps": "",
-        "l7rps": "",
-        "lu": "",
-        "outbound": "",
-        "rs": "",
-        "sp": "",
-        "sslcps": "",
-        "sslthroughput": "",
-        "status": "{{ vdom.status }}",
-        "ug": "",
-        "vs": ""
+        "mkey": "{{ vdom.name }}"
       }
   register: fad_vdom_post_results
   loop: "{{ fad_vdoms }}"
@@ -48,7 +32,7 @@
     loop_var: vdom
     label: "{{ vdom.name }}"
   when: >
-    (lookup('url', fad_vdom_api_endpoint
+    (lookup('url', fad_system_vdom_api_endpoint
     % (vdom.name), validate_certs=false, split_lines=false,
     headers=fad_api_header) | from_json).get('payload').mkey is undefined
   changed_when: "fad_vdom_post_results.json.payload == 0"
@@ -90,10 +74,10 @@
     label: "{{ vdom.name }}"
   # for the zone_list, it will compare the current value in the zone_list with the currently existing zones
   when:
-    - (lookup('url', fad_vdom_api_endpoint
+    - (lookup('url', fad_system_vdom_api_endpoint
       % (vdom.name), validate_certs=false, split_lines=false,
       headers=fad_api_header) | from_json).get('payload')['mkey'] is defined
-    - (lookup('url', fad_vdom_api_endpoint
+    - (lookup('url', fad_system_vdom_api_endpoint
       % (vdom.name), validate_certs=false, split_lines=false,
       headers=fad_api_header) | from_json).get('payload')['status'] != vdom.status | default('enabled')
   changed_when: "fad_vdom_put_results.json.payload == 0"
@@ -102,7 +86,7 @@
 - name: Print out the FAD VDOM values after create/update task.
   ansible.builtin.debug:
     msg: >
-      {{ (lookup('url', fad_vdom_api_endpoint
+      {{ (lookup('url', fad_system_vdom_api_endpoint
       % (vdom.name), validate_certs=false, split_lines=false, headers=fad_api_header) | from_json).get('payload') }}
   loop: "{{ fad_vdoms }}"
   loop_control:
