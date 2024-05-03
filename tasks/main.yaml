@@ -1,6 +1,6 @@
 ---
 
-- name: Create/update DNS Policy entry.
+- name: Create/update FAD VDOMs.
   vars:
     fad_vdom_api_endpoint: "{{ fad_base_url + fad_api_endpoint.system_vdom }}"
   ansible.builtin.import_tasks: fad_system_vdom.yaml
